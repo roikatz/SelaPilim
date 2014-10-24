@@ -15,7 +15,7 @@ mongoose.connect('mongodb://admin:Abcd1234@ds047050.mongolab.com:47050/football'
 
 t.on('tweet', function (tweet) {
     saveTweet(tweet);
-    // console.log(tweet.text);
+    // console.log(tweet.text+' -- END TWEET -- ');
 });
 
 t.on('error', function (err) {
@@ -23,7 +23,7 @@ t.on('error', function (err) {
 });
 
 t.on('reconnect', function (msg) {
-    console.log(msg)
+    console.log('reconnect: '+msg)
 });
 
 var startTracking = function(){
@@ -33,7 +33,8 @@ var startTracking = function(){
         var bufferStringSplit = bufferString.split('\n');
 
         for(tag in bufferStringSplit){
-            t.track(bufferStringSplit[tag], false);
+            t.track(bufferStringSplit[tag]+' fuck, ' +
+                    bufferStringSplit[tag]+' hate', false);
         };
 
         t.reconnect();
@@ -45,14 +46,24 @@ startTracking();
 
 
 var saveTweet = function(tweet){
+    var content = tweet.text;
+    var retweeted = tweet.retweeted;
+    var retweetedCount = 0;
+
+    if (tweet.retweeted_status) {
+        retweeted = true;
+        retweetedCount = tweet.retweeted_status.retweet_count;
+        content = tweet.retweeted_status.text;
+    }
+
     data = {tweetData:{ tweetID: tweet.id,
         lang: tweet.lang,
-        retweeted: tweet.retweeted,
-        retweetedCount: tweet.retweet_count,
+        retweeted: retweeted,
+        retweetedCount: retweetedCount,
         timestamp: tweet.timestamp_ms,
         place: tweet.place,
         source: tweet.source,//(iPhone, Android, web)
-        content: tweet.text
+        content: content
     },
         userID:{ userID: tweet.user.id,
             followers: tweet.user.followers_count
