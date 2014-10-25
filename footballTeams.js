@@ -2,6 +2,7 @@ var Twitter = require('./')
     , mongoose = require('mongoose')
     , Tweet = require('./lib/models/tweet-model')
     , fs = require('fs')
+    , utils = require('./utils')
     , t = new Twitter({
         consumer_key: 'qzdhyEANdQOCXY6zsixwRWoXy',
         consumer_secret: '4nzU3uzxqJHgXRr8ikXeFeX2HCla8AEiLwkvTEdckff0b6oQMv',
@@ -9,13 +10,15 @@ var Twitter = require('./')
         token_secret: 't1yURKhN8QnVwtJWaW3quxVZV8g9Efk488zxhVJloqbNU'
     });
 
+var curses = [],
+    teams = [];
 
 mongoose.connect('mongodb://admin:Abcd1234@ds047050.mongolab.com:47050/football');
 
 
 t.on('tweet', function (tweet) {
     saveTweet(tweet);
-    // console.log(tweet.text+' -- END TWEET -- ');
+    //console.log(tweet.text+' -- END TWEET -- ');
 });
 
 t.on('error', function (err) {
@@ -23,22 +26,29 @@ t.on('error', function (err) {
 });
 
 t.on('reconnect', function (msg) {
-    console.log('reconnect: '+msg)
+    if (msg.err)
+        console.log('reconnect: '+ msg.err.message);
 });
 
 var startTracking = function(){
-    fs.readFile('./TeamsList.txt',  function (err, data) {
-        if (err) throw err;
-        var bufferString = data.toString();
-        var bufferStringSplit = bufferString.split('\n');
+    curses = loadDataFromFileSync('./CurseList.txt');
+    teams = loadDataFromFileSync('./TeamsList.txt');
 
-        for(tag in bufferStringSplit){
-            t.track(bufferStringSplit[tag]+' fuck, ' +
-                    bufferStringSplit[tag]+' hate', false);
-        };
+    for(team in teams){
+        //t.track(teams[team], false); //track only the team name
+        for (curse in curses) {
+            t.track(teams[team] + ' ' + curses[curse], false);
+        }
+    };
 
-        t.reconnect();
-    });
+    t.reconnect();
+};
+
+var loadDataFromFileSync = function(file){
+    var data = fs.readFileSync(file);
+    var bufferString = data.toString();
+    bufferString = bufferString.replace(/(\r)/gm,"");
+    return bufferString.split('\n');
 };
 
 
